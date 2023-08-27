@@ -6,6 +6,8 @@ Bugra Tekin, Sudipta N. Sinha and Pascal Fua, "Real-Time Seamless Single Shot 6D
 
 The original repository for the codebase for the above paper can be found in the following [link](https://github.com/Microsoft/singleshotpose/).
 
+I added some changes to make it work on the new version of Pytorch and torchvision. This was tested on Python==3.11.4, Pytorch==2.0.1+cu117 and torchvision==0.15.2+cu117, CUDA==cuda_11.5.r11.5.
+
 ### Introduction
 
 We propose a single-shot approach for simultaneously detecting an object in an RGB image and predicting its 6D pose without requiring multiple stages or having to examine multiple hypotheses. The key component of our method is a new CNN architecture inspired by the YOLO network design that directly predicts the 2D image locations of the projected vertices of the object's 3D bounding box. The object's 6D pose is then estimated using a PnP algorithm. [Paper](http://openaccess.thecvf.com/content_cvpr_2018/papers/Tekin_Real-Time_Seamless_Single_CVPR_2018_paper.pdf), [arXiv](https://arxiv.org/abs/1711.08848)

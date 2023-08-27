@@ -186,7 +186,9 @@ def test(epoch, niter):
                 box_gt.extend([1.0, 1.0])
                 box_gt.append(truths[k][0])
                    
-                # Denormalize the corner predictions 
+                # Denormalize the corner predictions
+                box_gt = torch.FloatTensor(box_gt)
+                box_pr = torch.FloatTensor(box_pr)
                 corners2D_gt = np.array(np.reshape(box_gt[:num_keypoints*2], [num_keypoints, 2]), dtype='float32')
                 corners2D_pr = np.array(np.reshape(box_pr[:num_keypoints*2], [num_keypoints, 2]), dtype='float32')
                 corners2D_gt[:, 0] = corners2D_gt[:, 0] * im_width
@@ -274,7 +276,7 @@ if __name__ == "__main__":
 
     # Parse configuration files
     parser = argparse.ArgumentParser(description='SingleShotPose')
-    parser.add_argument('--datacfg', type=str, default='cfg/ape.data') # data config
+    parser.add_argument('--datacfg', type=str, default='cfg/cube.data') # data config
     parser.add_argument('--modelcfg', type=str, default='cfg/yolo-pose.cfg') # network config
     parser.add_argument('--initweightfile', type=str, default='cfg/darknet19_448.conv.23') # imagenet initialized weights
     parser.add_argument('--pretrain_num_epochs', type=int, default=15) # how many epoch to pretrain
@@ -405,6 +407,8 @@ if __name__ == "__main__":
             if (testing_accuracies[-1] > best_acc ):
                 best_acc = testing_accuracies[-1]
                 logging('best model so far!')
-                logging('save weights to %s/model.weights' % (backupdir))
-                model.save_weights('%s/model.weights' % (backupdir))
+                # logging('save weights to %s/model.weights' % (backupdir))
+                logging('save weights to %s/model_best_epoch%i_%.2f.weights' % (backupdir,epoch, best_acc))
+                best_model_path = '%s/model_best_epoch%i_%.2f.weights'%(backupdir,epoch, best_acc)
+                model.save_weights(best_model_path)
     # shutil.copy2('%s/model.weights' % (backupdir), '%s/model_backup.weights' % (backupdir))

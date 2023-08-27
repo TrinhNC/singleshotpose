@@ -134,6 +134,8 @@ def valid(datacfg, modelcfg, weightfile):
                 box_gt.append(truths[k][0])
 
                 # Denormalize the corner predictions 
+                box_gt = torch.FloatTensor(box_gt)
+                box_pr = torch.FloatTensor(box_pr)
                 corners2D_gt = np.array(np.reshape(box_gt[:18], [-1, 2]), dtype='float32')
                 corners2D_pr = np.array(np.reshape(box_pr[:18], [-1, 2]), dtype='float32')
                 corners2D_gt[:, 0] = corners2D_gt[:, 0] * im_width
