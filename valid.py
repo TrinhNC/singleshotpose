@@ -3,9 +3,13 @@ import time
 import torch
 import argparse
 import scipy.io
+import scipy.misc
 import warnings
 from torch.autograd import Variable
 from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
 
 import dataset
 from darknet import Darknet
@@ -17,7 +21,8 @@ def valid(datacfg, modelcfg, weightfile):
         for i in range(max_num_gt):
             if truths[i][1] == 0:
                 return i
-
+    edges_corners = [[0, 1], [0, 2], [0, 4], [1, 3], [1, 5], [2, 3], [2, 6], [3, 7], [4, 5], [4, 6], [5, 7], [6, 7]]
+    visualize = True
     # Parse configuration files
     data_options = read_data_cfg(datacfg)
     valid_images = data_options['valid']
@@ -67,7 +72,7 @@ def valid(datacfg, modelcfg, weightfile):
     vertices  = np.c_[np.array(mesh.vertices), np.ones((len(mesh.vertices), 1))].transpose()
     corners3D = get_3D_corners(vertices)
     try:
-        diam  = float(options['diam'])
+        diam  = float(data_options['diam'])
     except:
         diam  = calc_pts_diameter(np.array(mesh.vertices))
         
@@ -105,6 +110,11 @@ def valid(datacfg, modelcfg, weightfile):
     # Iterate through test batches (Batch size for test data is 1)
     count = 0
     for batch_idx, (data, target) in enumerate(test_loader):
+        # Images
+        img = data[0, :, :, :]
+        img = img.numpy().squeeze()
+        img = np.transpose(img, (1, 2, 0))
+
         t1 = time.time()
         # Pass data to GPU
         data = data.cuda()
@@ -170,6 +180,21 @@ def valid(datacfg, modelcfg, weightfile):
                 norm         = np.linalg.norm(proj_2d_gt - proj_2d_pred, axis=0)
                 pixel_dist   = np.mean(norm)
                 errs_2d.append(pixel_dist)
+
+                if visualize:
+                    proj_corners_gt = np.transpose(compute_projection(corners3D, Rt_gt, intrinsic_calibration)) 
+                    proj_corners_pr = np.transpose(compute_projection(corners3D, Rt_pr, intrinsic_calibration)) 
+                    plt.xlim((0, im_width))
+                    plt.ylim((0, im_height))
+                    plt.gca().invert_yaxis()
+                    img = cv2.resize(img, (im_width,im_height))
+                    #plt.imshow(scipy.misc.imresize(img, (im_height, im_width)))
+                    plt.imshow(img)
+                    for edge in edges_corners:
+                        plt.plot(proj_corners_gt[edge, 0], proj_corners_gt[edge, 1], color='g', linewidth=3.0)
+                        plt.plot(proj_corners_pr[edge, 0], proj_corners_pr[edge, 1], color='b', linewidth=3.0)
+                        #plt.gca().invert_yaxis()
+                    plt.show() #imsave("result.png", img)
 
                 # Compute 3D distances
                 transform_3d_gt   = compute_transformation(vertices, Rt_gt) 
@@ -238,9 +263,9 @@ if __name__ == '__main__':
 
     # Parse configuration files
     parser = argparse.ArgumentParser(description='SingleShotPose')
-    parser.add_argument('--datacfg', type=str, default='cfg/ape.data') # data config
+    parser.add_argument('--datacfg', type=str, default='cfg/cube.data') # data config
     parser.add_argument('--modelcfg', type=str, default='cfg/yolo-pose.cfg') # network config
-    parser.add_argument('--weightfile', type=str, default='backup/ape/model_backup.weights') # imagenet initialized weights
+    parser.add_argument('--weightfile', type=str, default='backups/model_best_epoch280_68.33.weights') # imagenet initialized weights
     args       = parser.parse_args()
     datacfg    = args.datacfg
     modelcfg   = args.modelcfg
